@@ -1,858 +1,820 @@
 class ExpenseTracker {
     constructor() {
+        this.expenses = this.loadExpenses();
+        this.currentFilter = '';
+        this.selectedExpenses = new Set();
+        this.currentLanguage = localStorage.getItem('language') || 'en';
+        this.currentTheme = localStorage.getItem('theme') || 'light';
+        
+        this.translations = {
+            en: {
+                'app.title': 'Expense Tracker',
+                'app.subtitle': 'Track your expenses with style',
+                'controls.theme': '🌙 Dark Mode',
+                'controls.themeLight': '☀️ Light Mode',
+                'summary.total': 'Total Spent',
+                'summary.count': 'Expenses',
+                'form.description': 'Description',
+                'form.amount': 'Amount (€)',
+                'form.selectCategory': 'Select Category',
+                'form.add': 'Add Expense',
+                'categories.food': 'Food - Bakery - Supermarket',
+                'categories.transport': 'Transportation',
+                'categories.entertainment': 'Entertainment',
+                'categories.shopping': 'Shopping',
+                'categories.bills': 'Bills & Utilities',
+                'categories.healthcare': 'Healthcare',
+                'categories.education': 'Education',
+                'categories.coffee': 'Coffee - Personal Expenses',
+                'categories.clothing': 'Clothing',
+                'categories.other': 'Other',
+                'filters.all': 'All',
+                'actions.selectAll': 'Select All',
+                'actions.deleteSelected': 'Delete Selected',
+                'actions.export': 'Export Analytics Report',
+                'messages.noExpenses': 'No expenses yet. Add your first expense above!',
+                'messages.expenseAdded': 'Expense added successfully!',
+                'messages.expenseDeleted': 'Expense deleted!',
+                'messages.expensesDeleted': 'Selected expenses deleted!',
+                'messages.reportExported': 'Analytics report exported!',
+                'export.title': 'Expense Analytics Report',
+                'export.generatedOn': 'Generated on',
+                'export.totalExpenses': 'Total Expenses',
+                'export.totalAmount': 'Total Amount',
+                'export.averageExpense': 'Average Expense',
+                'export.highestExpense': 'Highest Expense',
+                'export.categoryBreakdown': 'Category Breakdown',
+                'export.allTransactions': 'All Transactions',
+                'export.description': 'Description',
+                'export.amount': 'Amount',
+                'export.category': 'Category',
+                'export.date': 'Date'
+            },
+            gr: {
+                'app.title': 'Παρακολούθηση Εξόδων',
+                'app.subtitle': 'Παρακολουθήστε τα έξοδά σας με στυλ',
+                'controls.theme': '🌙 Σκούρο Θέμα',
+                'controls.themeLight': '☀️ Φωτεινό Θέμα',
+                'summary.total': 'Συνολικά Έξοδα',
+                'summary.count': 'Έξοδα',
+                'form.description': 'Περιγραφή',
+                'form.amount': 'Ποσό (€)',
+                'form.selectCategory': 'Επιλέξτε Κατηγορία',
+                'form.add': 'Προσθήκη Εξόδου',
+                'categories.food': 'Φαγητό - Φούρνος - Σούπερ Μάρκετ',
+                'categories.transport': 'Μεταφορά',
+                'categories.entertainment': 'Ψυχαγωγία',
+                'categories.shopping': 'Αγορές',
+                'categories.bills': 'Λογαριασμοί & Υπηρεσίες',
+                'categories.healthcare': 'Υγεία',
+                'categories.education': 'Εκπαίδευση',
+                'categories.coffee': 'Καφές - Προσωπικά Έξοδα',
+                'categories.clothing': 'Ένδυση',
+                'categories.other': 'Άλλα',
+                'filters.all': 'Όλα',
+                'actions.selectAll': 'Επιλογή Όλων',
+                'actions.deleteSelected': 'Διαγραφή Επιλεγμένων',
+                'actions.export': 'Εξαγωγή Αναλυτικής Αναφοράς',
+                'messages.noExpenses': 'Δεν υπάρχουν έξοδα ακόμα. Προσθέστε το πρώτο σας έξοδο παραπάνω!',
+                'messages.expenseAdded': 'Το έξοδο προστέθηκε επιτυχώς!',
+                'messages.expenseDeleted': 'Το έξοδο διαγράφηκε!',
+                'messages.expensesDeleted': 'Τα επιλεγμένα έξοδα διαγράφηκαν!',
+                'messages.reportExported': 'Η αναλυτική αναφορά εξήχθη!',
+                'export.title': 'Αναλυτική Αναφορά Εξόδων',
+                'export.generatedOn': 'Δημιουργήθηκε στις',
+                'export.totalExpenses': 'Συνολικά Έξοδα',
+                'export.totalAmount': 'Συνολικό Ποσό',
+                'export.averageExpense': 'Μέσος Όρος Εξόδου',
+                'export.highestExpense': 'Υψηλότερο Έξοδο',
+                'export.categoryBreakdown': 'Ανάλυση ανά Κατηγορία',
+                'export.allTransactions': 'Όλες οι Συναλλαγές',
+                'export.description': 'Περιγραφή',
+                'export.amount': 'Ποσό',
+                'export.category': 'Κατηγορία',
+                'export.date': 'Ημερομηνία'
+            }
+        };
+
+        this.init();
+    }
+
+    init() {
         try {
-            // Safe localStorage access with error handling
-            this.expenses = this.safeLoadExpenses();
-            this.currentFilter = 'all';
-            this.currentLanguage = localStorage.getItem('language') || 'en';
-            this.currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-            this.selectedExpenses = new Set();
+            console.log('Initializing Expense Tracker...');
+            this.setupEventListeners();
+            this.setupServiceWorker();
+            this.applyTheme();
+            this.applyLanguage();
+            this.renderExpenses();
+            this.updateSummary();
+            this.animateEntrance();
             
-            this.translations = {
-                en: {
-                    categories: {
-                        food: 'Food & Dining',
-                        transport: 'Transportation',
-                        entertainment: 'Entertainment',
-                        shopping: 'Shopping',
-                        bills: 'Bills & Utilities',
-                        healthcare: 'Healthcare',
-                        education: 'Education',
-                        other: 'Other'
-                    },
-                    messages: {
-                        expenseAdded: 'Expense added successfully!',
-                        expenseDeleted: 'Expense deleted successfully!',
-                        expensesDeleted: 'Selected expenses deleted!',
-                        noExpensesSelected: 'No expenses selected!',
-                        reportExported: 'Report exported successfully!'
-                    }
-                },
-                el: {
-                    categories: {
-                        food: 'Φαγητό & Εστιατόρια',
-                        transport: 'Μεταφορές',
-                        entertainment: 'Ψυχαγωγία',
-                        shopping: 'Αγορές',
-                        bills: 'Λογαριασμοί',
-                        healthcare: 'Υγεία',
-                        education: 'Εκπαίδευση',
-                        other: 'Άλλα'
-                    },
-                    messages: {
-                        expenseAdded: 'Το έξοδο προστέθηκε επιτυχώς!',
-                        expenseDeleted: 'Το έξοδο διαγράφηκε επιτυχώς!',
-                        expensesDeleted: 'Τα επιλεγμένα έξοδα διαγράφηκαν!',
-                        noExpensesSelected: 'Δεν έχουν επιλεγεί έξοδα!',
-                        reportExported: 'Η αναφορά εξήχθη επιτυχώς!'
-                    }
+            // Force hide loading screen after 3 seconds max
+            setTimeout(() => {
+                console.log('Force hiding loading screen...');
+                const loadingScreen = document.getElementById('loadingScreen');
+                if (loadingScreen) {
+                    loadingScreen.classList.add('hidden');
                 }
-            };
+            }, 3000);
             
-            this.init();
+            console.log('Expense Tracker initialized successfully');
         } catch (error) {
-            console.error('Error initializing ExpenseTracker:', error);
-            this.forceHideLoadingScreen();
+            console.error('Error during initialization:', error);
+            // Force hide loading screen on error
+            setTimeout(() => {
+                const loadingScreen = document.getElementById('loadingScreen');
+                if (loadingScreen) {
+                    loadingScreen.classList.add('hidden');
+                }
+            }, 1000);
         }
     }
-    
-    safeLoadExpenses() {
-        try {
-            const stored = localStorage.getItem('expenses');
-            if (!stored) return [];
-            
-            const parsed = JSON.parse(stored);
-            return Array.isArray(parsed) ? parsed : [];
-        } catch (error) {
-            console.error('Error loading expenses from localStorage:', error);
-            // Clear corrupted data
-            localStorage.removeItem('expenses');
-            return [];
+
+    setupEventListeners() {
+        // Form submission
+        document.getElementById('expenseForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.addExpense();
+        });
+
+        // Theme toggle
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            this.toggleTheme();
+        });
+
+        // Language toggle
+        document.getElementById('langToggle').addEventListener('click', () => {
+            this.toggleLanguage();
+        });
+
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                this.setFilter(e.target.dataset.category);
+                this.updateFilterButtons(e.target);
+            });
+        });
+
+        // Select all checkbox
+        document.getElementById('selectAll').addEventListener('change', (e) => {
+            this.selectAll(e.target.checked);
+        });
+
+        // Delete selected button
+        document.getElementById('deleteSelected').addEventListener('click', () => {
+            this.deleteSelected();
+        });
+
+        // Export button
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            this.exportReport();
+        });
+
+        // Setup intersection observer for animations
+        this.setupIntersectionObserver();
+    }
+
+    setupServiceWorker() {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js', {
+                scope: './'
+            })
+            .then(registration => {
+                console.log('SW registered:', registration);
+                // Force update if needed
+                if (registration.waiting) {
+                    registration.waiting.postMessage({type: 'SKIP_WAITING'});
+                }
+            })
+            .catch(error => {
+                console.log('SW registration failed:', error);
+                // Don't let SW failures block the app
+                this.forceLoadApp();
+            });
+        } else {
+            // Service workers not supported, continue normally
+            this.forceLoadApp();
         }
     }
-    
-    forceHideLoadingScreen() {
-        try {
+
+    // Add this method to force app loading if SW fails
+    forceLoadApp() {
+        setTimeout(() => {
             const loadingScreen = document.getElementById('loadingScreen');
             if (loadingScreen) {
                 loadingScreen.classList.add('hidden');
             }
-        } catch (error) {
-            console.error('Error hiding loading screen:', error);
-        }
+        }, 1000);
     }
-    
-    init() {
-        try {
-            this.setupEventListeners();
-            this.setupIntersectionObserver();
-            this.loadTheme();
-            this.loadLanguage();
-            this.renderExpenses();
-            this.updateSummary();
-            
-            // Register service worker without blocking
-            this.registerServiceWorker().catch(error => {
-                console.warn('Service worker registration failed:', error);
-            });
-            
-            // Always hide loading screen after maximum 2 seconds
-            setTimeout(() => {
-                this.forceHideLoadingScreen();
-            }, 2000);
-            
-        } catch (error) {
-            console.error('Error in init():', error);
-            // Ensure loading screen is hidden even if init fails
-            this.forceHideLoadingScreen();
-        }
-    }
-    
-    setupEventListeners() {
-        try {
-            // Form submission
-            const form = document.getElementById('expenseForm');
-            if (form) {
-                form.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    this.addExpense();
-                });
-            }
-            
-            // Theme toggle
-            const themeToggle = document.getElementById('themeToggle');
-            if (themeToggle) {
-                themeToggle.addEventListener('click', () => {
-                    this.toggleTheme();
-                });
-            }
-            
-            // Language toggle
-            const langToggle = document.getElementById('langToggle');
-            if (langToggle) {
-                langToggle.addEventListener('click', () => {
-                    this.toggleLanguage();
-                });
-            }
-            
-            // Export button
-            const exportBtn = document.getElementById('exportBtn');
-            if (exportBtn) {
-                exportBtn.addEventListener('click', () => {
-                    this.exportReport();
-                });
-            }
-            
-            // Filter buttons
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    this.setFilter(e.target.dataset.filter);
-                });
-            });
-            
-            // Delete selected button
-            const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
-            if (deleteSelectedBtn) {
-                deleteSelectedBtn.addEventListener('click', () => {
-                    this.deleteSelectedExpenses();
-                });
-            }
-            
-            // Add ripple effect to buttons
-            document.querySelectorAll('.btn, .filter-btn').forEach(btn => {
-                btn.addEventListener('click', this.createRipple);
-            });
-            
-            // Form field focus effects
-            document.querySelectorAll('.form-control').forEach(field => {
-                field.addEventListener('focus', (e) => {
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(30, 58, 138, 0.1)';
-                });
-                
-                field.addEventListener('blur', (e) => {
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = 'none';
-                });
-            });
-        } catch (error) {
-            console.error('Error setting up event listeners:', error);
-        }
-    }
-    
+
     setupIntersectionObserver() {
-        try {
-            if ('IntersectionObserver' in window) {
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            entry.target.style.opacity = '1';
-                            entry.target.style.transform = 'translateY(0)';
-                        }
-                    });
-                });
-                
-                document.querySelectorAll('.card').forEach(card => {
-                    observer.observe(card);
-                });
-            }
-        } catch (error) {
-            console.error('Error setting up intersection observer:', error);
-        }
-    }
-    
-    createRipple(e) {
-        try {
-            const button = e.currentTarget;
-            const ripple = document.createElement('span');
-            const rect = button.getBoundingClientRect();
-            const size = Math.max(rect.width, rect.height);
-            const x = e.clientX - rect.left - size / 2;
-            const y = e.clientY - rect.top - size / 2;
-            
-            ripple.style.width = ripple.style.height = size + 'px';
-            ripple.style.left = x + 'px';
-            ripple.style.top = y + 'px';
-            ripple.style.position = 'absolute';
-            ripple.style.borderRadius = '50%';
-            ripple.style.background = 'rgba(255, 255, 255, 0.6)';
-            ripple.style.transform = 'scale(0)';
-            ripple.style.animation = 'ripple 600ms linear';
-            ripple.style.pointerEvents = 'none';
-            
-            button.appendChild(ripple);
-            
-            setTimeout(() => {
-                if (ripple.parentNode) {
-                    ripple.remove();
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-in');
                 }
-            }, 600);
-        } catch (error) {
-            console.error('Error creating ripple:', error);
-        }
-    }
-    
-    addExpense() {
-        try {
-            const description = document.getElementById('description')?.value?.trim();
-            const amount = parseFloat(document.getElementById('amount')?.value);
-            const category = document.getElementById('category')?.value;
-            
-            if (!description || !amount || !category || isNaN(amount)) {
-                this.showToast('Please fill all fields correctly!', 'error');
-                return;
-            }
-            
-            const expense = {
-                id: Date.now() + Math.random(),
-                description,
-                amount,
-                category,
-                date: new Date().toLocaleDateString(this.currentLanguage === 'el' ? 'el-GR' : 'en-US'),
-                timestamp: Date.now()
-            };
-            
-            this.expenses.unshift(expense);
-            this.saveExpenses();
-            this.renderExpenses();
-            this.updateSummary();
-            this.resetForm();
-            
-            this.showToast(this.translations[this.currentLanguage].messages.expenseAdded, 'success');
-            this.createParticleExplosion();
-            
-            // Haptic feedback
-            if (navigator.vibrate) {
-                navigator.vibrate(50);
-            }
-        } catch (error) {
-            console.error('Error adding expense:', error);
-            this.showToast('Error adding expense!', 'error');
-        }
-    }
-    
-    deleteExpense(id) {
-        try {
-            this.expenses = this.expenses.filter(expense => expense.id !== id);
-            this.saveExpenses();
-            this.renderExpenses();
-            this.updateSummary();
-            this.showToast(this.translations[this.currentLanguage].messages.expenseDeleted, 'success');
-            
-            if (navigator.vibrate) {
-                navigator.vibrate([50, 50, 50]);
-            }
-        } catch (error) {
-            console.error('Error deleting expense:', error);
-            this.showToast('Error deleting expense!', 'error');
-        }
-    }
-    
-    deleteSelectedExpenses() {
-        try {
-            if (this.selectedExpenses.size === 0) {
-                this.showToast(this.translations[this.currentLanguage].messages.noExpensesSelected, 'error');
-                return;
-            }
-            
-            this.expenses = this.expenses.filter(expense => !this.selectedExpenses.has(expense.id));
-            this.selectedExpenses.clear();
-            this.saveExpenses();
-            this.renderExpenses();
-            this.updateSummary();
-            this.showToast(this.translations[this.currentLanguage].messages.expensesDeleted, 'success');
-            
-            if (navigator.vibrate) {
-                navigator.vibrate([100, 50, 100]);
-            }
-        } catch (error) {
-            console.error('Error deleting selected expenses:', error);
-            this.showToast('Error deleting expenses!', 'error');
-        }
-    }
-    
-    toggleExpenseSelection(id) {
-        try {
-            if (this.selectedExpenses.has(id)) {
-                this.selectedExpenses.delete(id);
-            } else {
-                this.selectedExpenses.add(id);
-            }
-            this.renderExpenses();
-        } catch (error) {
-            console.error('Error toggling expense selection:', error);
-        }
-    }
-    
-    setFilter(filter) {
-        try {
-            this.currentFilter = filter;
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.filter === filter);
             });
-            this.renderExpenses();
-        } catch (error) {
-            console.error('Error setting filter:', error);
+        }, { threshold: 0.1 });
+
+        // Observe all glass cards
+        document.querySelectorAll('.glass-card').forEach(card => {
+            observer.observe(card);
+        });
+    }
+
+    addExpense() {
+        const description = document.getElementById('description').value.trim();
+        const amount = parseFloat(document.getElementById('amount').value);
+        const category = document.getElementById('category').value;
+
+        if (!description || !amount || !category) {
+            this.showToast('Please fill all fields!', 'error');
+            return;
+        }
+
+        const expense = {
+            id: Date.now() + Math.random().toString(36).substr(2, 9),
+            description,
+            amount,
+            category,
+            date: this.formatDate(new Date()),
+            timestamp: Date.now()
+        };
+
+        this.expenses.unshift(expense);
+        this.saveExpenses();
+        this.renderExpenses();
+        this.updateSummary();
+        this.clearForm();
+        this.showToast(this.translate('messages.expenseAdded'), 'success');
+        this.createParticleExplosion();
+        this.vibrateDevice();
+    }
+
+    deleteExpense(id) {
+        this.expenses = this.expenses.filter(expense => expense.id !== id);
+        this.selectedExpenses.delete(id);
+        this.saveExpenses();
+        this.renderExpenses();
+        this.updateSummary();
+        this.updateBulkActions();
+        this.showToast(this.translate('messages.expenseDeleted'), 'success');
+        this.vibrateDevice();
+    }
+
+    deleteSelected() {
+        this.expenses = this.expenses.filter(expense => !this.selectedExpenses.has(expense.id));
+        this.selectedExpenses.clear();
+        this.saveExpenses();
+        this.renderExpenses();
+        this.updateSummary();
+        this.updateBulkActions();
+        this.showToast(this.translate('messages.expensesDeleted'), 'success');
+        this.vibrateDevice();
+    }
+
+    selectExpense(id, checked) {
+        if (checked) {
+            this.selectedExpenses.add(id);
+        } else {
+            this.selectedExpenses.delete(id);
+        }
+        this.updateBulkActions();
+        this.updateSelectAllCheckbox();
+    }
+
+    selectAll(checked) {
+        const filteredExpenses = this.getFilteredExpenses();
+        if (checked) {
+            filteredExpenses.forEach(expense => this.selectedExpenses.add(expense.id));
+        } else {
+            filteredExpenses.forEach(expense => this.selectedExpenses.delete(expense.id));
+        }
+        
+        document.querySelectorAll('.expense-checkbox:not(#selectAll)').forEach(checkbox => {
+            checkbox.checked = checked;
+        });
+        
+        this.updateBulkActions();
+    }
+
+    updateSelectAllCheckbox() {
+        const filteredExpenses = this.getFilteredExpenses();
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const selectedFiltered = filteredExpenses.filter(expense => this.selectedExpenses.has(expense.id));
+        
+        selectAllCheckbox.checked = filteredExpenses.length > 0 && selectedFiltered.length === filteredExpenses.length;
+        selectAllCheckbox.indeterminate = selectedFiltered.length > 0 && selectedFiltered.length < filteredExpenses.length;
+    }
+
+    updateBulkActions() {
+        const bulkActions = document.getElementById('bulkActions');
+        const selectedCount = document.getElementById('selectedCount');
+        
+        if (this.selectedExpenses.size > 0) {
+            bulkActions.classList.add('show');
+            selectedCount.textContent = `${this.selectedExpenses.size} selected`;
+        } else {
+            bulkActions.classList.remove('show');
         }
     }
-    
+
+    setFilter(category) {
+        this.currentFilter = category;
+        this.selectedExpenses.clear();
+        this.renderExpenses();
+        this.updateBulkActions();
+    }
+
+    updateFilterButtons(activeBtn) {
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        activeBtn.classList.add('active');
+    }
+
     getFilteredExpenses() {
-        try {
-            if (this.currentFilter === 'all') {
-                return this.expenses;
-            }
-            return this.expenses.filter(expense => expense.category === this.currentFilter);
-        } catch (error) {
-            console.error('Error filtering expenses:', error);
-            return [];
-        }
+        if (!this.currentFilter) return this.expenses;
+        return this.expenses.filter(expense => expense.category === this.currentFilter);
     }
-    
+
     renderExpenses() {
-        try {
-            const expensesList = document.getElementById('expensesList');
-            if (!expensesList) return;
-            
-            const filteredExpenses = this.getFilteredExpenses();
-            
-            if (filteredExpenses.length === 0) {
-                expensesList.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📊</div>
-                        <div class="empty-state-text" data-en="No expenses found" data-el="Δεν βρέθηκαν έξοδα">No expenses found</div>
-                        <div class="empty-state-subtext" data-en="Add your first expense above to get started" data-el="Προσθέστε το πρώτο σας έξοδο παραπάνω για να ξεκινήσετε">Add your first expense above to get started</div>
-                    </div>
-                `;
-                this.updateLanguageElements();
-                return;
-            }
-            
-            expensesList.innerHTML = filteredExpenses.map((expense, index) => `
-                <div class="expense-item" style="animation-delay: ${index * 100}ms">
-                    <div class="expense-info">
-                        <div class="expense-description">${this.escapeHtml(expense.description)}</div>
-                        <div class="expense-details">
-                            ${this.translations[this.currentLanguage].categories[expense.category] || expense.category} • ${expense.date}
+        const expenseList = document.getElementById('expenseList');
+        const filteredExpenses = this.getFilteredExpenses();
+
+        if (filteredExpenses.length === 0) {
+            expenseList.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📊</div>
+                    <p data-translate="messages.noExpenses">${this.translate('messages.noExpenses')}</p>
+                </div>
+            `;
+            return;
+        }
+
+        expenseList.innerHTML = filteredExpenses.map((expense, index) => `
+            <div class="expense-item" data-id="${expense.id}" style="animation-delay: ${index * 100}ms">
+                <div class="expense-info">
+                    <input type="checkbox" class="expense-checkbox" 
+                           ${this.selectedExpenses.has(expense.id) ? 'checked' : ''}
+                           onchange="expenseTracker.selectExpense('${expense.id}', this.checked)">
+                    <div class="expense-details">
+                        <div class="expense-description">${expense.description}</div>
+                        <div class="expense-meta">
+                            <span>${this.translate('categories.' + expense.category)}</span>
+                            <span>${expense.date}</span>
                         </div>
                     </div>
-                    <div class="expense-amount">€${expense.amount.toFixed(2)}</div>
-                    <div class="expense-actions">
-                        <button class="btn btn-small ${this.selectedExpenses.has(expense.id) ? 'btn-secondary' : ''}" 
-                                onclick="expenseTracker.toggleExpenseSelection(${expense.id})">
-                            ${this.selectedExpenses.has(expense.id) ? '✓' : '☐'}
-                        </button>
-                        <button class="btn btn-danger btn-small" onclick="expenseTracker.deleteExpense(${expense.id})">
-                            🗑️
-                        </button>
-                    </div>
                 </div>
-            `).join('');
-        } catch (error) {
-            console.error('Error rendering expenses:', error);
-        }
+                <div class="expense-amount">€${expense.amount.toFixed(2)}</div>
+                <div class="expense-actions">
+                    <button class="btn-delete" onclick="expenseTracker.deleteExpense('${expense.id}')" title="Delete">
+                        🗑️
+                    </button>
+                </div>
+            </div>
+        `).join('');
+
+        // Animate items in
+        setTimeout(() => {
+            document.querySelectorAll('.expense-item').forEach(item => {
+                item.classList.add('animate-in');
+            });
+        }, 50);
+
+        this.updateSelectAllCheckbox();
     }
-    
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-    
+
     updateSummary() {
-        try {
-            const total = this.expenses.reduce((sum, expense) => sum + expense.amount, 0);
-            const count = this.expenses.length;
-            
-            this.animateCounter('totalAmount', total, (value) => `€${value.toFixed(2)}`);
-            this.animateCounter('expenseCount', count);
-        } catch (error) {
-            console.error('Error updating summary:', error);
-        }
+        const totalAmount = this.expenses.reduce((sum, expense) => sum + expense.amount, 0);
+        const expenseCount = this.expenses.length;
+
+        this.animateCounter('totalAmount', totalAmount, '€');
+        this.animateCounter('expenseCount', expenseCount);
     }
-    
-    animateCounter(elementId, targetValue, formatter = (value) => value) {
-        try {
-            const element = document.getElementById(elementId);
-            if (!element) return;
+
+    animateCounter(elementId, targetValue, prefix = '') {
+        const element = document.getElementById(elementId);
+        const duration = 1000;
+        const startTime = performance.now();
+        const startValue = 0;
+
+        const animate = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
             
-            const startValue = 0;
-            const duration = 1000;
-            const startTime = Date.now();
+            // Easing function
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            const currentValue = startValue + (targetValue - startValue) * easeOut;
             
-            const updateCounter = () => {
-                const elapsed = Date.now() - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                const currentValue = startValue + (targetValue - startValue) * this.easeOutQuart(progress);
-                
-                element.textContent = formatter(currentValue);
-                element.classList.add('count-animation');
-                
-                if (progress < 1) {
-                    requestAnimationFrame(updateCounter);
-                } else {
-                    setTimeout(() => element.classList.remove('count-animation'), 500);
-                }
-            };
-            
-            updateCounter();
-        } catch (error) {
-            console.error('Error animating counter:', error);
-        }
-    }
-    
-    easeOutQuart(t) {
-        return 1 - Math.pow(1 - t, 4);
-    }
-    
-    createParticleExplosion() {
-        try {
-            const explosion = document.createElement('div');
-            explosion.className = 'particle-explosion';
-            explosion.style.left = '50%';
-            explosion.style.top = '50%';
-            document.body.appendChild(explosion);
-            
-            for (let i = 0; i < 8; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'explosion-particle';
-                particle.style.setProperty('--random-x', (Math.random() - 0.5) * 200 + 'px');
-                particle.style.setProperty('--random-y', (Math.random() - 0.5) * 200 + 'px');
-                particle.style.left = '50%';
-                particle.style.top = '50%';
-                explosion.appendChild(particle);
+            if (prefix === '€') {
+                element.textContent = prefix + currentValue.toFixed(2);
+            } else {
+                element.textContent = Math.floor(currentValue);
             }
-            
-            setTimeout(() => {
-                if (explosion.parentNode) {
-                    explosion.remove();
-                }
-            }, 1000);
-        } catch (error) {
-            console.error('Error creating particle explosion:', error);
-        }
+
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+
+        requestAnimationFrame(animate);
     }
-    
+
     toggleTheme() {
-        try {
-            this.currentTheme = this.currentTheme === 'light' ? 'dark' : 'light';
-            this.loadTheme();
-            this.safeSetLocalStorage('theme', this.currentTheme);
-        } catch (error) {
-            console.error('Error toggling theme:', error);
+        this.currentTheme = this.currentTheme === 'light' ? 'dark' : 'light';
+        this.applyTheme();
+        localStorage.setItem('theme', this.currentTheme);
+    }
+
+    applyTheme() {
+        document.body.setAttribute('data-theme', this.currentTheme);
+        const themeToggle = document.getElementById('themeToggle');
+        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        
+        if (this.currentTheme === 'dark') {
+            themeToggle.innerHTML = '☀️ ' + this.translate('controls.themeLight');
+            metaThemeColor.content = '#000000';
+        } else {
+            themeToggle.innerHTML = '🌙 ' + this.translate('controls.theme');
+            metaThemeColor.content = '#667eea';
         }
     }
-    
-    loadTheme() {
-        try {
-            document.documentElement.setAttribute('data-theme', this.currentTheme);
-            const themeBtn = document.getElementById('themeToggle');
-            const metaTheme = document.querySelector('meta[name="theme-color"]');
-            
-            if (themeBtn) {
-                if (this.currentTheme === 'dark') {
-                    themeBtn.innerHTML = '☀️ Light Mode';
-                    themeBtn.setAttribute('data-en', '☀️ Light Mode');
-                    themeBtn.setAttribute('data-el', '☀️ Φωτεινό Θέμα');
-                } else {
-                    themeBtn.innerHTML = '🌙 Dark Mode';
-                    themeBtn.setAttribute('data-en', '🌙 Dark Mode');
-                    themeBtn.setAttribute('data-el', '🌙 Σκοτεινό Θέμα');
-                }
-            }
-            
-            if (metaTheme) {
-                metaTheme.setAttribute('content', this.currentTheme === 'dark' ? '#111827' : '#1e3a8a');
-            }
-            
-            this.updateLanguageElements();
-        } catch (error) {
-            console.error('Error loading theme:', error);
-        }
-    }
-    
+
     toggleLanguage() {
-        try {
-            this.currentLanguage = this.currentLanguage === 'en' ? 'el' : 'en';
-            this.loadLanguage();
-            this.safeSetLocalStorage('language', this.currentLanguage);
-        } catch (error) {
-            console.error('Error toggling language:', error);
-        }
+        this.currentLanguage = this.currentLanguage === 'en' ? 'gr' : 'en';
+        this.applyLanguage();
+        localStorage.setItem('language', this.currentLanguage);
     }
-    
-    loadLanguage() {
-        try {
-            document.documentElement.setAttribute('lang', this.currentLanguage);
-            this.updateLanguageElements();
-            this.renderExpenses();
-        } catch (error) {
-            console.error('Error loading language:', error);
-        }
+
+    applyLanguage() {
+        const langToggle = document.getElementById('langToggle');
+        langToggle.textContent = this.currentLanguage === 'en' ? '🇬🇷 Ελληνικά' : '🇺🇸 English';
+        
+        // Update all elements with data-translate attribute
+        document.querySelectorAll('[data-translate]').forEach(element => {
+            const key = element.getAttribute('data-translate');
+            element.textContent = this.translate(key);
+        });
+
+        // Re-render expenses to update category translations
+        this.renderExpenses();
+        this.applyTheme(); // Update theme button text
     }
-    
-    updateLanguageElements() {
-        try {
-            document.querySelectorAll('[data-en]').forEach(element => {
-                const key = this.currentLanguage === 'en' ? 'data-en' : 'data-el';
-                const text = element.getAttribute(key);
-                if (text) {
-                    element.textContent = text;
-                }
-            });
+
+    translate(key) {
+        return this.translations[this.currentLanguage][key] || key;
+    }
+
+    formatDate(date) {
+        if (this.currentLanguage === 'gr') {
+            return date.toLocaleDateString('el-GR');
+        }
+        return date.toLocaleDateString('en-US');
+    }
+
+    clearForm() {
+        document.getElementById('expenseForm').reset();
+        // Remove focus from form inputs
+        document.querySelectorAll('.form-input, .form-select').forEach(input => {
+            input.blur();
+        });
+    }
+
+    showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerHTML = `
+            ${message}
+            <div class="toast-progress"></div>
+        `;
+
+        document.body.appendChild(toast);
+
+        // Show toast
+        setTimeout(() => toast.classList.add('show'), 100);
+
+        // Hide and remove toast
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => document.body.removeChild(toast), 300);
+        }, 3000);
+    }
+
+    createParticleExplosion() {
+        const container = document.createElement('div');
+        container.className = 'particle-explosion';
+        container.style.left = '50%';
+        container.style.top = '50%';
+        
+        for (let i = 0; i < 10; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'explosion-particle';
             
-            document.querySelectorAll('[data-en-placeholder]').forEach(element => {
-                const key = this.currentLanguage === 'en' ? 'data-en-placeholder' : 'data-el-placeholder';
-                const placeholder = element.getAttribute(key);
-                if (placeholder) {
-                    element.setAttribute('placeholder', placeholder);
-                }
-            });
-        } catch (error) {
-            console.error('Error updating language elements:', error);
+            const angle = (i / 10) * Math.PI * 2;
+            const velocity = 100 + Math.random() * 100;
+            const dx = Math.cos(angle) * velocity;
+            const dy = Math.sin(angle) * velocity;
+            
+            particle.style.setProperty('--dx', dx + 'px');
+            particle.style.setProperty('--dy', dy + 'px');
+            
+            container.appendChild(particle);
+        }
+        
+        document.body.appendChild(container);
+        
+        setTimeout(() => {
+            document.body.removeChild(container);
+        }, 1000);
+    }
+
+    vibrateDevice() {
+        if ('vibrate' in navigator) {
+            navigator.vibrate([100, 50, 100]);
         }
     }
-    
+
+    animateEntrance() {
+        // Stagger animation for glass cards
+        const cards = document.querySelectorAll('.glass-card');
+        cards.forEach((card, index) => {
+            setTimeout(() => {
+                card.classList.add('animate-in');
+            }, index * 200);
+        });
+    }
+
     exportReport() {
-        try {
-            const total = this.expenses.reduce((sum, expense) => sum + expense.amount, 0);
-            const categoryTotals = {};
-            
-            this.expenses.forEach(expense => {
-                categoryTotals[expense.category] = (categoryTotals[expense.category] || 0) + expense.amount;
-            });
-            
-            const reportDate = new Date().toLocaleDateString(this.currentLanguage === 'el' ? 'el-GR' : 'en-US');
-            const reportTitle = this.currentLanguage === 'en' ? 'Expense Report' : 'Αναφορά Εξόδων';
-            
-            const html = this.generateReportHTML(reportTitle, reportDate, total, categoryTotals);
-            
-            const blob = new Blob([html], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `expense-report-${reportDate.replace(/\//g, '-')}.html`;
-            a.click();
-            URL.revokeObjectURL(url);
-            
-            this.showToast(this.translations[this.currentLanguage].messages.reportExported, 'success');
-        } catch (error) {
-            console.error('Error exporting report:', error);
-            this.showToast('Error exporting report!', 'error');
-        }
-    }
-    
-    generateReportHTML(reportTitle, reportDate, total, categoryTotals) {
-        return `
+        const totalAmount = this.expenses.reduce((sum, expense) => sum + expense.amount, 0);
+        const expenseCount = this.expenses.length;
+        const averageExpense = expenseCount > 0 ? totalAmount / expenseCount : 0;
+        const highestExpense = expenseCount > 0 ? Math.max(...this.expenses.map(e => e.amount)) : 0;
+
+        // Category breakdown
+        const categoryTotals = {};
+        this.expenses.forEach(expense => {
+            categoryTotals[expense.category] = (categoryTotals[expense.category] || 0) + expense.amount;
+        });
+
+        const currentDate = new Date().toLocaleDateString(this.currentLanguage === 'gr' ? 'el-GR' : 'en-US');
+
+        const reportHTML = `
 <!DOCTYPE html>
 <html lang="${this.currentLanguage}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${reportTitle} - ${reportDate}</title>
+    <title>${this.translate('export.title')}</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
             margin: 0;
-            padding: 20px;
-            background: #1e3a8a;
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
             min-height: 100vh;
         }
         .container {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            padding: 40px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         }
         .header {
             text-align: center;
-            margin-bottom: 40px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #1e3a8a;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #667eea;
         }
-        .header h1 {
-            color: #1e3a8a;
+        .title {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             font-size: 2.5rem;
-            margin: 0;
             font-weight: 700;
+            margin-bottom: 0.5rem;
         }
-        .stats {
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
         }
         .stat-card {
-            background: #1e3a8a;
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
+            background: linear-gradient(135deg, #f8f9ff, #e8f2ff);
+            border: 1px solid #e0e8ff;
+            border-radius: 15px;
+            padding: 1.5rem;
             text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
         }
         .stat-value {
             font-size: 2rem;
             font-weight: 700;
-            margin-bottom: 5px;
+            color: #667eea;
+            margin-bottom: 0.5rem;
         }
         .stat-label {
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             font-size: 0.9rem;
-            opacity: 0.9;
         }
-        .categories {
-            margin-bottom: 40px;
+        .section {
+            margin-bottom: 2rem;
+        }
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #eee;
         }
         .category-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
         }
         .category-card {
-            background: #f9fafb;
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #1e3a8a;
+            background: #f8f9ff;
+            border: 1px solid #e0e8ff;
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
         }
         .category-name {
             font-weight: 600;
-            color: #111827;
-            margin-bottom: 5px;
+            color: #333;
+            margin-bottom: 0.5rem;
         }
         .category-amount {
             font-size: 1.2rem;
             font-weight: 700;
-            color: #1e3a8a;
-        }
-        .transactions {
-            margin-top: 40px;
+            color: #667eea;
         }
         .table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
-        }
-        .table th, .table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #e5e7eb;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
         }
         .table th {
-            background: #f9fafb;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 1rem;
+            text-align: left;
             font-weight: 600;
-            color: #111827;
+        }
+        .table td {
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        .table tr:nth-child(even) {
+            background: #f8f9ff;
+        }
+        .table tr:hover {
+            background: #e8f2ff;
+        }
+        .amount {
+            font-weight: 600;
+            color: #667eea;
         }
         .footer {
-            margin-top: 40px;
             text-align: center;
-            color: #6b7280;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+            color: #666;
             font-size: 0.9rem;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
         }
         @media (max-width: 768px) {
-            .container { padding: 20px; }
-            .stats { grid-template-columns: 1fr; }
+            body { padding: 1rem; }
+            .container { padding: 1rem; }
+            .stats-grid { grid-template-columns: 1fr; }
             .category-grid { grid-template-columns: 1fr; }
+            .table { font-size: 0.9rem; }
+            .table th, .table td { padding: 0.5rem; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>💰 ${reportTitle}</h1>
-            <p>${reportDate}</p>
+            <h1 class="title">${this.translate('export.title')}</h1>
+            <p class="subtitle">${this.translate('export.generatedOn')}: ${currentDate}</p>
         </div>
-        
-        <div class="stats">
+
+        <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-value">€${total.toFixed(2)}</div>
-                <div class="stat-label">${this.currentLanguage === 'en' ? 'Total Spent' : 'Συνολικό Κόστος'}</div>
+                <div class="stat-value">${expenseCount}</div>
+                <div class="stat-label">${this.translate('export.totalExpenses')}</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value">${this.expenses.length}</div>
-                <div class="stat-label">${this.currentLanguage === 'en' ? 'Total Expenses' : 'Συνολικά Έξοδα'}</div>
+                <div class="stat-value">€${totalAmount.toFixed(2)}</div>
+                <div class="stat-label">${this.translate('export.totalAmount')}</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value">€${this.expenses.length ? (total / this.expenses.length).toFixed(2) : '0.00'}</div>
-                <div class="stat-label">${this.currentLanguage === 'en' ? 'Average Expense' : 'Μέσος Όρος'}</div>
+                <div class="stat-value">€${averageExpense.toFixed(2)}</div>
+                <div class="stat-label">${this.translate('export.averageExpense')}</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value">€${this.expenses.length ? Math.max(...this.expenses.map(e => e.amount)).toFixed(2) : '0.00'}</div>
-                <div class="stat-label">${this.currentLanguage === 'en' ? 'Highest Expense' : 'Μεγαλύτερο Έξοδο'}</div>
+                <div class="stat-value">€${highestExpense.toFixed(2)}</div>
+                <div class="stat-label">${this.translate('export.highestExpense')}</div>
             </div>
         </div>
-        
-        <div class="categories">
-            <h2>${this.currentLanguage === 'en' ? 'Category Breakdown' : 'Κατανομή Κατηγοριών'}</h2>
+
+        <div class="section">
+            <h2 class="section-title">${this.translate('export.categoryBreakdown')}</h2>
             <div class="category-grid">
                 ${Object.entries(categoryTotals).map(([category, amount]) => `
                     <div class="category-card">
-                        <div class="category-name">${this.translations[this.currentLanguage].categories[category] || category}</div>
+                        <div class="category-name">${this.translate('categories.' + category)}</div>
                         <div class="category-amount">€${amount.toFixed(2)}</div>
                     </div>
                 `).join('')}
             </div>
         </div>
-        
-        <div class="transactions">
-            <h2>${this.currentLanguage === 'en' ? 'All Transactions' : 'Όλες οι Συναλλαγές'}</h2>
+
+        <div class="section">
+            <h2 class="section-title">${this.translate('export.allTransactions')}</h2>
             <table class="table">
                 <thead>
                     <tr>
-                        <th>${this.currentLanguage === 'en' ? 'Date' : 'Ημερομηνία'}</th>
-                        <th>${this.currentLanguage === 'en' ? 'Description' : 'Περιγραφή'}</th>
-                        <th>${this.currentLanguage === 'en' ? 'Category' : 'Κατηγορία'}</th>
-                        <th>${this.currentLanguage === 'en' ? 'Amount' : 'Ποσό'}</th>
+                        <th>${this.translate('export.description')}</th>
+                        <th>${this.translate('export.amount')}</th>
+                        <th>${this.translate('export.category')}</th>
+                        <th>${this.translate('export.date')}</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${this.expenses.map(expense => `
                         <tr>
+                            <td>${expense.description}</td>
+                            <td class="amount">€${expense.amount.toFixed(2)}</td>
+                            <td>${this.translate('categories.' + expense.category)}</td>
                             <td>${expense.date}</td>
-                            <td>${this.escapeHtml(expense.description)}</td>
-                            <td>${this.translations[this.currentLanguage].categories[expense.category] || expense.category}</td>
-                            <td>€${expense.amount.toFixed(2)}</td>
                         </tr>
                     `).join('')}
                 </tbody>
             </table>
         </div>
-        
+
         <div class="footer">
-            <p>${this.currentLanguage === 'en' ? 'Generated by ExpenseTracker PWA' : 'Δημιουργήθηκε από ExpenseTracker PWA'}</p>
+            <p>Generated by Expense Tracker PWA • ${new Date().toLocaleString()}</p>
         </div>
     </div>
 </body>
 </html>
         `;
+
+        // Create and download the report
+        const blob = new Blob([reportHTML], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `expense-report-${new Date().toISOString().split('T')[0]}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        this.showToast(this.translate('messages.reportExported'), 'success');
+        this.createParticleExplosion();
     }
-    
-    showToast(message, type = 'success') {
+
+    loadExpenses() {
         try {
-            const toast = document.getElementById('toast');
-            if (!toast) return;
-            
-            toast.textContent = message;
-            toast.className = `toast ${type}`;
-            toast.classList.add('show');
-            
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
+            const saved = localStorage.getItem('expenses');
+            return saved ? JSON.parse(saved) : [];
         } catch (error) {
-            console.error('Error showing toast:', error);
+            console.error('Error loading expenses:', error);
+            return [];
         }
     }
-    
-    resetForm() {
-        try {
-            const form = document.getElementById('expenseForm');
-            if (form) {
-                form.reset();
-            }
-            const description = document.getElementById('description');
-            if (description) {
-                description.focus();
-            }
-        } catch (error) {
-            console.error('Error resetting form:', error);
-        }
-    }
-    
+
     saveExpenses() {
-        this.safeSetLocalStorage('expenses', JSON.stringify(this.expenses));
-    }
-    
-    safeSetLocalStorage(key, value) {
         try {
-            localStorage.setItem(key, value);
+            localStorage.setItem('expenses', JSON.stringify(this.expenses));
         } catch (error) {
-            console.error('Error saving to localStorage:', error);
-        }
-    }
-    
-    async registerServiceWorker() {
-        if ('serviceWorker' in navigator) {
-            try {
-                const registration = await navigator.serviceWorker.register('sw.js');
-                console.log('Service Worker registered successfully:', registration);
-            } catch (error) {
-                console.log('Service Worker registration failed:', error);
-            }
+            console.error('Error saving expenses:', error);
+            this.showToast('Error saving data!', 'error');
         }
     }
 }
 
-// Initialize the app with error handling
-let expenseTracker;
-try {
-    // Wait for DOM to be ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            expenseTracker = new ExpenseTracker();
-        });
-    } else {
-        expenseTracker = new ExpenseTracker();
-    }
-} catch (error) {
-    console.error('Critical error initializing app:', error);
-    // Force hide loading screen as fallback
-    setTimeout(() => {
-        const loadingScreen = document.getElementById('loadingScreen');
-        if (loadingScreen) {
-            loadingScreen.classList.add('hidden');
-        }
-    }, 1000);
-}
+// Initialize the app
+const expenseTracker = new ExpenseTracker();
 
-// Add ripple animation styles
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes ripple {
-        to {
-            transform: scale(4);
-            opacity: 0;
-        }
-    }
-`;
-document.head.appendChild(style);
+// Make it globally available for inline event handlers
+window.expenseTracker = expenseTracker;
