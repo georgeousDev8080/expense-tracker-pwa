@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ExpenseTracker PWA</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="description" content="Modern expense tracker with offline support">
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Apple PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="ExpenseTracker">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="icon-192.png" type="image/png">
+    
+    <style>
+        :root {
+            /* Minimal color palette with dark blue, black, white, grey */
+            --primary-blue: #1e3a8a;
+            --primary-blue-light: #3b82f6;
+            --primary-blue-dark: #1e40af;
+            --secondary-blue: #dbeafe;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --text-muted: #9ca3af;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --bg-tertiary: #f3f4f6;
+            --border-light: #e5e7eb;
+            --border-medium: #d1d5db;
+            --success-color: #059669;
+            --error-color: #dc2626;
+            --warning-color: #d97706;
+            --shadow-light: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-medium: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-large: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        [data-theme="dark"] {
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --text-muted: #9ca3af;
+            --bg-primary: #111827;
+            --bg-secondary: #1f2937;
+            --bg-tertiary: #374151;
+            --border-light: #374151;
+            --border-medium: #4b5563;
+            --secondary-blue: #1e3a8a;
+            --shadow-light: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --shadow-medium: 0 4px 6px rgba(0, 0, 0, 0.3);
+            --shadow-large: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .minimal-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            z-index: -1;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: var(--shadow-medium);
+            margin-bottom: 24px;
+            transition: all 0.2s ease;
+        }
+        
+        .card:hover {
+            box-shadow: var(--shadow-large);
+            transform: translateY(-2px);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+            animation: slideDown 0.6s ease;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary-blue);
+            margin-bottom: 8px;
+            letter-spacing: -0.025em;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--primary-blue);
+            color: white;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid transparent;
+        }
+        
+        .btn:hover {
+            background: var(--primary-blue-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-medium);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--border-medium);
+        }
+        
+        .btn-danger {
+            background: var(--error-color);
+        }
+        
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+        
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+            animation: slideIn 0.6s ease 0.1s both;
+        }
+        
+        .summary-card {
+            text-align: center;
+            padding: 24px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+        }
+        
+        .summary-value {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            margin-bottom: 8px;
+            font-feature-settings: 'tnum';
+        }
+        
+        .summary-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 500;
+        }
+        
+        .form-section {
+            animation: slideIn 0.6s ease 0.2s both;
+        }
+        
+        .form-section h2 {
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border-light);
+            border-radius: 8px;
+            font-size: 16px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+        }
+        
+        .form-control::placeholder {
+            color: var(--text-muted);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 140px;
+            gap: 16px;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            animation: slideIn 0.6s ease 0.3s both;
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid var(--border-medium);
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            border-radius: 20px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        
+        .filter-btn.active {
+            background: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
+        }
+        
+        .filter-btn:hover:not(.active) {
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+        }
+        
+        .expenses-list {
+            animation: slideIn 0.6s ease 0.4s both;
+        }
+        
+        .expense-item {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+            animation: slideUp 0.3s ease;
+        }
+        
+        .expense-item:hover {
+            border-color: var(--border-medium);
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .expense-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .expense-description {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+            word-break: break-word;
+        }
+        
+        .expense-details {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+        
+        .expense-amount {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            margin-right: 16px;
+            font-feature-settings: 'tnum';
+        }
+        
+        .expense-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+            min-width: 32px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-muted);
+        }
+        
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        .empty-state-text {
+            font-size: 1.125rem;
+            margin-bottom: 8px;
+        }
+        
+        .empty-state-subtext {
+            font-size: 0.875rem;
+        }
+        
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+        
+        .loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .loading-logo {
+            font-size: 3rem;
+            animation: bounce 1s infinite;
+            margin-bottom: 24px;
+        }
+        
+        .loading-spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border-light);
+            border-top: 3px solid var(--primary-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        .loading-text {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-top: 16px;
+            font-weight: 500;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--success-color);
+            color: white;
+            padding: 16px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            box-shadow: var(--shadow-large);
+        }
+        
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .toast.error {
+            background: var(--error-color);
+        }
+        
+        .toast-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 0 0 8px 8px;
+            animation: progress 3s linear;
+        }
+        
+        .particle-explosion {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        .explosion-particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--success-color);
+            border-radius: 50%;
+            animation: explode 0.8s ease-out forwards;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-20px);
+            }
+            60% {
+                transform: translateY(-10px);
+            }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes progress {
+            0% { width: 100%; }
+            100% { width: 0%; }
+        }
+        
+        @keyframes explode {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.2) translate(var(--random-x), var(--random-y));
+            }
+        }
+        
+        @keyframes countUp {
+            from {
+                transform: translateY(10px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .count-animation {
+            animation: countUp 0.4s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .expense-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            
+            .expense-actions {
+                align-self: flex-end;
+            }
+            
+            .summary {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .btn {
+                width: 100%;
+            }
+            
+            .toast {
+                right: 16px;
+                left: 16px;
+            }
+        }
+        
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        
+        /* Focus styles for accessibility */
+        .btn:focus,
+        .form-control:focus,
+        .filter-btn:focus {
+            outline: 2px solid var(--primary-blue);
+            outline-offset: 2px;
+        }
+        
+        /* Selection styles */
+        ::selection {
+            background: rgba(30, 58, 138, 0.2);
+        }
+        
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-medium);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-logo">💰</div>
+        <div class="loading-spinner"></div>
+        <div class="loading-text" data-en="Loading ExpenseTracker..." data-el="Φόρτωση ExpenseTracker...">Loading ExpenseTracker...</div>
+    </div>
+    
+    <div class="minimal-bg"></div>
+    
+    <div class="container">
+        <header class="header">
+            <h1 data-en="ExpenseTracker" data-el="Παρακολούθηση Εξόδων">ExpenseTracker</h1>
+            <div class="controls">
+                <button class="btn btn-secondary" id="themeToggle" data-en="🌙 Dark Mode" data-el="🌙 Σκοτεινό Θέμα">🌙 Dark Mode</button>
+                <button class="btn btn-secondary" id="langToggle" data-en="🇬🇷 Ελληνικά" data-el="🇺🇸 English">🇬🇷 Ελληνικά</button>
+                <button class="btn" id="exportBtn" data-en="📊 Export Report" data-el="📊 Εξαγωγή Αναφοράς">📊 Export Report</button>
+            </div>
+        </header>
+        
+        <div class="card summary">
+            <div class="summary-card">
+                <div class="summary-value" id="totalAmount">€0.00</div>
+                <div class="summary-label" data-en="Total Spent" data-el="Συνολικό Κόστος">Total Spent</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value" id="expenseCount">0</div>
+                <div class="summary-label" data-en="Expenses" data-el="Έξοδα">Expenses</div>
+            </div>
+        </div>
+        
+        <div class="card form-section">
+            <h2 data-en="Add New Expense" data-el="Προσθήκη Νέου Εξόδου">Add New Expense</h2>
+            <form id="expenseForm">
+                <div class="form-group">
+                    <label data-en="Description" data-el="Περιγραφή">Description</label>
+                    <input type="text" class="form-control" id="description" data-en-placeholder="Enter expense description" data-el-placeholder="Εισάγετε περιγραφή εξόδου" placeholder="Enter expense description" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-en="Category" data-el="Κατηγορία">Category</label>
+                        <select class="form-control" id="category" required>
+                            <option value="" data-en="Select category" data-el="Επιλέξτε κατηγορία">Select category</option>
+                            <option value="food" data-en="Food & Dining" data-el="Φαγητό & Εστιατόρια">Food & Dining</option>
+                            <option value="transport" data-en="Transportation" data-el="Μεταφορές">Transportation</option>
+                            <option value="entertainment" data-en="Entertainment" data-el="Ψυχαγωγία">Entertainment</option>
+                            <option value="shopping" data-en="Shopping" data-el="Αγορές">Shopping</option>
+                            <option value="bills" data-en="Bills & Utilities" data-el="Λογαριασμοί">Bills & Utilities</option>
+                            <option value="healthcare" data-en="Healthcare" data-el="Υγεία">Healthcare</option>
+                            <option value="education" data-en="Education" data-el="Εκπαίδευση">Education</option>
+                            <option value="other" data-en="Other" data-el="Άλλα">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-en="Amount (€)" data-el="Ποσό (€)">Amount (€)</label>
+                        <input type="number" class="form-control" id="amount" step="0.01" min="0" data-en-placeholder="0.00" data-el-placeholder="0,00" placeholder="0.00" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn" data-en="Add Expense" data-el="Προσθήκη Εξόδου">Add Expense</button>
+            </form>
+        </div>
+        
+        <div class="card">
+            <div class="controls">
+                <h2 data-en="Expenses" data-el="Έξοδα">Expenses</h2>
+                <button class="btn btn-danger btn-small" id="deleteSelectedBtn" data-en="Delete Selected" data-el="Διαγραφή Επιλεγμένων">Delete Selected</button>
+            </div>
+            
+            <div class="filters">
+                <button class="filter-btn active" data-filter="all" data-en="All" data-el="Όλα">All</button>
+                <button class="filter-btn" data-filter="food" data-en="Food" data-el="Φαγητό">Food</button>
+                <button class="filter-btn" data-filter="transport" data-en="Transport" data-el="Μεταφορές">Transport</button>
+                <button class="filter-btn" data-filter="entertainment" data-en="Entertainment" data-el="Ψυχαγωγία">Entertainment</button>
+                <button class="filter-btn" data-filter="shopping" data-en="Shopping" data-el="Αγορές">Shopping</button>
+                <button class="filter-btn" data-filter="bills" data-en="Bills" data-el="Λογαριασμοί">Bills</button>
+                <button class="filter-btn" data-filter="healthcare" data-en="Healthcare" data-el="Υγεία">Healthcare</button>
+                <button class="filter-btn" data-filter="education" data-en="Education" data-el="Εκπαίδευση">Education</button>
+                <button class="filter-btn" data-filter="other" data-en="Other" data-el="Άλλα">Other</button>
+            </div>
+            
+            <div class="expenses-list" id="expensesList">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📊</div>
+                    <div class="empty-state-text" data-en="No expenses yet" data-el="Δεν υπάρχουν έξοδα ακόμα">No expenses yet</div>
+                    <div class="empty-state-subtext" data-en="Add your first expense above to get started" data-el="Προσθέστε το πρώτο σας έξοδο παραπάνω για να ξεκινήσετε">Add your first expense above to get started</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast">
+        <div class="toast-progress"></div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
